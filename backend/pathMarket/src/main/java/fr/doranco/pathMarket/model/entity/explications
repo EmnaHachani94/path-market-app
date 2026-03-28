@@ -1,0 +1,57 @@
+/*
+******************** Entity *****************************************
+Relations -Cascade
+
+Cascade = "Que se passe-t-il pour les enfants quand je modifie le parent ?"
+
+  PERSIST  → Sauvegarder ensemble  -- On ne supprime PAS l'enfant' si on supprime le parent
+  MERGE    → Mettre à jour ensemble -- si on met à jr le parent ses enfants sont aussi propagées
+  REMOVE   → Supprimer ensemble ⚠️ DANGER !  -- Quand vous supprimez le parent, les enfants sont aussi supprimés.
+  ALL      → Tout ensemble ⚠️ TRÈS DANGER ! --Combine TOUS les types ci-dessus
+
+  Règle d'or :
+  - Relations fortes (parent-enfant) → CascadeType.ALL
+  - Relations faibles (indépendantes) → Pas de cascade ou PERSIST/MERGE seulement
+  - Côté @ManyToOne → JAMAIS de cascade !
+
+----------------------------------------------------------------------
+Mapped - Join
+
+// Classe A
+@OneToMany(mappedBy = "nomAttributDansClasseB")
+private List<ClasseB> ...;
+
+// Classe B
+@ManyToOne
+private ClasseA nomAttributDansClasseB; // ← Doit correspondre au mappedBy
+---------------------------------------------------------------
+
+Fetch.LAZY
+
+meilleure performance : charge les données liées seulement quand on en a besoin
+
+Relation	Fetch par défaut
+ManyToOne	EAGER
+OneToMany	LAZY
+OneToOne	EAGER
+ManyToMany	LAZY
+*****************************************************************************
+c'est quoi l'injection de dependance ? c'est quoi le @Autowired ? c'est quoi le constructeur ?
+    c'est sont des concepts de la programmation orientée objet et de l'inversion de contrôle.
+     L'injection de dépendance est un design pattern qui permet de réduire les dépendances entre les classes en injectant les dépendances nécessaires à une classe plutôt que de les créer elle-même.
+     Le @Autowired est une annotation utilisée dans Spring pour indiquer que Spring doit injecter automatiquement une instance d'une classe dans une autre classe.
+    Le constructeur est une méthode spéciale d'une classe qui est appelée lors de la création d'une instance de cette classe.
+    Il est utilisé pour initialiser les variables d'instance et effectuer toute configuration nécessaire.*/
+******************************** Repository **********************************
+* En Spring Boot avec JPA, un repository s’étend de JpaRepository,
+ ce qui te donne toutes les méthodes CRUD automatiquement (save, findAll, findById, delete, etc.).
+
+* Un DTO (Data Transfer Object), c’est un objet “simple” fait pour transporter des données entre ton API et le client (Postman / front),
+ sans exposer directement tes entités JPA (@Entity).
+ => DTO = format API.
+ Le DTO sert à :
+ simplifier les échanges avec le frontend / Postman
+ éviter les problèmes de boucle infinie (JSON)
+ contrôler ce que tu exposes
+**********************************************************
+*/
