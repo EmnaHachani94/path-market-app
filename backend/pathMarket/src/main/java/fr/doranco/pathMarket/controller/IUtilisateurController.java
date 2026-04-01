@@ -1,6 +1,7 @@
 package fr.doranco.pathMarket.controller;
 
 import fr.doranco.pathMarket.model.dto.UserRegisterRequestDto;
+import fr.doranco.pathMarket.model.dto.UserResponseDto;
 import fr.doranco.pathMarket.model.entity.Utilisateur;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +45,7 @@ public interface IUtilisateurController {
      *
      * @return une liste de tous les utilisateurs ou une erreur si aucun utilisateur n'est trouvé.
      */
-    ResponseEntity<List<UserRegisterRequestDto>> getAllUsers();
+    ResponseEntity<List<UserResponseDto>> getAllUsers();
 
     /**
      * Récupérer un utilisateur par son adresse email.

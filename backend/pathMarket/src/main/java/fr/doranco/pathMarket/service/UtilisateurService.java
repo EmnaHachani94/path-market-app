@@ -1,6 +1,7 @@
 package fr.doranco.pathMarket.service;
 
 import fr.doranco.pathMarket.model.dto.UserRegisterRequestDto;
+import fr.doranco.pathMarket.model.dto.UserResponseDto;
 import fr.doranco.pathMarket.model.entity.Utilisateur;
 import fr.doranco.pathMarket.repository.IUtilisateurRepository;
 import fr.doranco.pathMarket.utils.DtoConverter;
@@ -11,6 +12,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UtilisateurService implements IUtilisateurService {
@@ -70,22 +72,18 @@ public class UtilisateurService implements IUtilisateurService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserRegisterRequestDto> getUsers() {
+    public List<UserResponseDto> getUsers() {
 
         List<Utilisateur> users = utilisateurRepository.findAll();
-        List<UserRegisterRequestDto> userRegisterRequestDtos = new ArrayList<>();
-
+        List<UserResponseDto> dtos = new ArrayList<>();
         for (Utilisateur user : users) {
-            UserRegisterRequestDto userRegisterRequestDto = DtoConverter.convert(user);
-            userRegisterRequestDtos.add(userRegisterRequestDto);
-
+            dtos.add(DtoConverter.convertToResponse(user));
         }
-
-        return userRegisterRequestDtos;
+        return dtos;
     }
 
     @Override
-    public List<Utilisateur> getUtilisateurByAdresseEmail(String adresseEmail) {
+    public Optional<Utilisateur> getUtilisateurByAdresseEmail(String adresseEmail) {
         if (adresseEmail == null || adresseEmail.trim().isEmpty()) {
             throw new IllegalArgumentException("Adresse email obligatoire !");
         }

@@ -3,6 +3,7 @@ package fr.doranco.pathMarket.utils;
 
 import fr.doranco.pathMarket.model.dto.ProduitDto;
 import fr.doranco.pathMarket.model.dto.UserRegisterRequestDto;
+import fr.doranco.pathMarket.model.dto.UserResponseDto;
 import fr.doranco.pathMarket.model.entity.Produit;
 import fr.doranco.pathMarket.model.entity.Utilisateur;
 
@@ -19,10 +20,17 @@ public final class DtoConverter {
         UserRegisterRequestDto userRegisterRequestDto = new UserRegisterRequestDto();
         userRegisterRequestDto.setPseudo(user.getPseudo());
         userRegisterRequestDto.setAdresseEmail(user.getAdresseEmail());
-        userRegisterRequestDto.setMotDePasse(user.getMotDePasse());
         userRegisterRequestDto.setDateDeNaissance(user.getDateDeNaissance());
-        userRegisterRequestDto.setActive(user.isActive());
+        //userRegisterRequestDto.setActive(user.isActive());
         return userRegisterRequestDto;
+    }
+    public static UserResponseDto convertToResponse(Utilisateur user) {
+        UserResponseDto dto = new UserResponseDto();
+        dto.setId(user.getId());
+        dto.setPseudo(user.getPseudo());
+        dto.setAdresseEmail(user.getAdresseEmail());
+        dto.setDateDeNaissance(user.getDateDeNaissance() != null ? user.getDateDeNaissance().toString() : null);
+        return dto;
     }
 
     public static ProduitDto convert(Produit produit) {

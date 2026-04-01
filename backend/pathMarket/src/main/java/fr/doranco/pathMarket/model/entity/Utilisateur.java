@@ -28,7 +28,7 @@ public class Utilisateur {
     @Column(nullable = false, unique = true, name = "adresse_email", length = 100)
     private String adresseEmail;
 
-    @Column(nullable = false, name = "mot_de_passe", length = 50)
+    @Column(nullable = false, name = "mot_de_passe", length = 255)
     private String motDePasse;
 
     @Column(nullable = false)
@@ -43,6 +43,4 @@ public class Utilisateur {
 
     @OneToMany(mappedBy = "utilisateur")
     private List<ListeDeCourses> listeCourses;
-
-
 }

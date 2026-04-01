@@ -1,6 +1,7 @@
 package fr.doranco.pathMarket.controller;
 
 import fr.doranco.pathMarket.model.dto.UserRegisterRequestDto;
+import fr.doranco.pathMarket.model.dto.UserResponseDto;
 import fr.doranco.pathMarket.model.entity.Utilisateur;
 import fr.doranco.pathMarket.service.IUtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,19 +12,18 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:8081")
+@CrossOrigin(origins = "*")
 @RequestMapping("/api/rest/user")
 public class UtilisateurController implements IUtilisateurController{
-
     @Autowired
     private IUtilisateurService utilisateurService;
 
     public UtilisateurController(IUtilisateurService utilisateurService){
         this.utilisateurService = utilisateurService;
     }
-
     /**
      * Création d'un utilisateur.
      * @param utilisateur
@@ -75,10 +75,10 @@ public class UtilisateurController implements IUtilisateurController{
     @GetMapping(
             value = "/all",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<UserRegisterRequestDto>> getAllUsers() {
+    public ResponseEntity<List<UserResponseDto>> getAllUsers() {
         try {
-            List<UserRegisterRequestDto> userRegisterRequestDtos = utilisateurService.getUsers();
-            return new ResponseEntity<>(userRegisterRequestDtos, HttpStatus.OK);
+            List<UserResponseDto> users = utilisateurService.getUsers();
+            return new ResponseEntity<>(users, HttpStatus.OK);
         }catch (Exception e){
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -103,13 +103,13 @@ public class UtilisateurController implements IUtilisateurController{
 
     @Override
     @GetMapping(value = "/search/{adresseEmail}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Utilisateur> getUtilisateurByAdresseEmail(String adresseEmail) {
+    public ResponseEntity<Utilisateur> getUtilisateurByAdresseEmail(@PathVariable String adresseEmail) {
         try {
-            List<Utilisateur> utilisateurs = utilisateurService.getUtilisateurByAdresseEmail(adresseEmail);
+            Optional<Utilisateur> utilisateurs = utilisateurService.getUtilisateurByAdresseEmail(adresseEmail);
             if (utilisateurs.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
-            return new ResponseEntity<>(utilisateurs.get(0), HttpStatus.OK);
+            return new ResponseEntity<>(utilisateurs.get(), HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);

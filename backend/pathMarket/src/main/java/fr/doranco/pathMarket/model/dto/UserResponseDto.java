@@ -7,6 +7,5 @@ public class UserResponseDto {
     private Long id;
     private String pseudo;
     private String adresseEmail;
-    private String motDePasse;
     private String dateDeNaissance;
 }
