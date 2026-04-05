@@ -367,16 +367,12 @@ const styles = StyleSheet.create({
   categoriesRow: {
     marginTop: 12,
     marginBottom: 10,
-    width: "100%", // ✅ au lieu de "92%" pour éviter un “cut” visuel
+    width: "100%",
   },
 
-  // ❌ ne pas centrer une liste scrollable
   categoriesContent: {
-    paddingHorizontal: 8, // ✅ petit padding gauche/droite
+    paddingHorizontal: 8, //
     alignItems: "center",
-    // supprime: justifyContent: "center",
-    // supprime: width: "100%",
-    // supprime: gap: 0 (optionnel)
   },
 
   categoryItem: {

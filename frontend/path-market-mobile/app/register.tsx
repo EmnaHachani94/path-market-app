@@ -32,7 +32,6 @@ export default function Register() {
   });
 
   const [loading, setLoading] = useState(false);
-
   const formatDOB = (text: string) => {
     const digits = text.replace(/\D/g, "").slice(0, 8);
     const dd = digits.slice(0, 2);
@@ -52,15 +51,11 @@ export default function Register() {
       newErrors.dateNaissance = "Date de naissance obligatoire";
     if (!email.trim()) newErrors.email = "Email obligatoire";
     if (!password.trim()) newErrors.password = "Mot de passe obligatoire";
-
     setErrors(newErrors);
-
     const hasErrors = Object.values(newErrors).some((v) => v);
     if (hasErrors) return;
-
     try {
       setLoading(true);
-
       const result = await registerUser({
         nom,
         email,
@@ -70,7 +65,7 @@ export default function Register() {
 
       console.log("Register OK:", result);
 
-      router.replace("/home"); // adapte si ta route est différente
+      router.replace("/home");
     } catch (e: any) {
       console.log("Register ERROR:", e?.message ?? e);
       setErrors((prev) => ({
