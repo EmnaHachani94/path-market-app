@@ -11,11 +11,12 @@ import {
 } from "react-native";
 
 import FormCard from "@/src/components/FormCard";
+import AppFooter from "../src/components/AppFooter";
 import AuthHeader from "../src/components/AuthHeader";
 import FormField from "../src/components/FormField";
 import PrimaryButton from "../src/components/PrimaryButton";
 import Screen from "../src/components/Screen";
-import AppFooter from "../src/components/AppFooter";
+import { registerUser } from "../src/services/authentificationApi";
 
 export default function Register() {
   const [nom, setNom] = useState("");
@@ -30,7 +31,20 @@ export default function Register() {
     password: "",
   });
 
-  const onSubmit = () => {
+  const [loading, setLoading] = useState(false);
+
+  const formatDOB = (text: string) => {
+    const digits = text.replace(/\D/g, "").slice(0, 8);
+    const dd = digits.slice(0, 2);
+    const mm = digits.slice(2, 4);
+    const yyyy = digits.slice(4, 8);
+
+    if (digits.length <= 2) return dd;
+    if (digits.length <= 4) return `${dd}/${mm}`;
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
+  const onSubmit = async () => {
     const newErrors = { nom: "", dateNaissance: "", email: "", password: "" };
 
     if (!nom.trim()) newErrors.nom = "Nom obligatoire";
@@ -44,34 +58,42 @@ export default function Register() {
     const hasErrors = Object.values(newErrors).some((v) => v);
     if (hasErrors) return;
 
-    // TODO: Appel API / inscription
-    // Après succès (quand tu auras la page connectée), tu feras par ex:
-    // router.replace("/(tabs)");
+    try {
+      setLoading(true);
+
+      const result = await registerUser({
+        nom,
+        email,
+        password,
+        dateNaissance,
+      });
+
+      console.log("Register OK:", result);
+
+      router.replace("/home"); // adapte si ta route est différente
+    } catch (e: any) {
+      console.log("Register ERROR:", e?.message ?? e);
+      setErrors((prev) => ({
+        ...prev,
+        email: e?.message ?? "Erreur inscription",
+      }));
+      console.log("Register ERROR:", e?.message ?? e);
+    } finally {
+      setLoading(false);
+    }
   };
-const formatDOB = (text: string) => {
-  // garder seulement les chiffres
-  const digits = text.replace(/\D/g, "").slice(0, 8); // max 8 chiffres: JJMMYYYY
 
-  const dd = digits.slice(0, 2);
-  const mm = digits.slice(2, 4);
-  const yyyy = digits.slice(4, 8);
-
-  if (digits.length <= 2) return dd;
-  if (digits.length <= 4) return `${dd}/${mm}`;
-  return `${dd}/${mm}/${yyyy}`;
-};
   return (
     <Screen>
       <KeyboardAvoidingView
-  style={styles.flex}
-  behavior={Platform.OS === "ios" ? "padding" : "height"}
-  keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
->
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
+      >
         <ScrollView
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header (logo) */}
           <View style={styles.header}>
             <View style={styles.logoRow}>
               <Image
@@ -92,23 +114,23 @@ const formatDOB = (text: string) => {
               inputProps={{
                 placeholder: "Votre nom",
                 value: nom,
-                onChangeText: (t) => setNom(t),
+                onChangeText: (t: string) => setNom(t),
                 returnKeyType: "next",
               }}
             />
 
             <FormField
-  label="Date de naissance"
-  error={errors.dateNaissance}
-  inputProps={{
-    placeholder: "JJ/MM/AAAA",
-    value: dateNaissance,
-    keyboardType: "number-pad",
-    maxLength: 10, // JJ/MM/AAAA = 10 caractères
-    onChangeText: (t: string) => setDateNaissance(formatDOB(t)),
-    returnKeyType: "next",
-  }}
-/>
+              label="Date de naissance"
+              error={errors.dateNaissance}
+              inputProps={{
+                placeholder: "JJ/MM/AAAA",
+                value: dateNaissance,
+                keyboardType: "number-pad",
+                maxLength: 10,
+                onChangeText: (t: string) => setDateNaissance(formatDOB(t)),
+                returnKeyType: "next",
+              }}
+            />
 
             <FormField
               label="Email"
@@ -118,7 +140,7 @@ const formatDOB = (text: string) => {
                 keyboardType: "email-address",
                 autoCapitalize: "none",
                 value: email,
-                onChangeText: (t) => setEmail(t),
+                onChangeText: (t: string) => setEmail(t),
                 returnKeyType: "next",
               }}
             />
@@ -130,13 +152,13 @@ const formatDOB = (text: string) => {
                 placeholder: "••••••••",
                 secureTextEntry: true,
                 value: password,
-                onChangeText: (t) => setPassword(t),
+                onChangeText: (t: string) => setPassword(t),
                 returnKeyType: "done",
               }}
             />
 
             <PrimaryButton
-              title="S’inscrire"
+              title={loading ? "..." : "S’inscrire"}
               onPress={onSubmit}
               style={{ width: "100%" }}
             />
@@ -147,7 +169,6 @@ const formatDOB = (text: string) => {
           </FormCard>
         </ScrollView>
 
-        {/* Footer fixé en bas : Home -> Welcome (/) */}
         <AppFooter />
       </KeyboardAvoidingView>
     </Screen>
@@ -158,27 +179,18 @@ const FOOTER_HEIGHT = 64;
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-
   container: {
     flexGrow: 1,
     paddingHorizontal: 22,
     paddingTop: 14,
-    paddingBottom: 18 + FOOTER_HEIGHT, // IMPORTANT: espace pour ne pas cacher le bas
+    paddingBottom: 18 + FOOTER_HEIGHT,
     alignItems: "center",
     gap: 14,
   },
-
-  header: {
-    width: "100%",
-    alignItems: "flex-start",
-  },
-  logoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+  header: { width: "100%", alignItems: "flex-start" },
+  logoRow: { flexDirection: "row", alignItems: "center" },
   logoImg: { width: 60, height: 60 },
   brand: { color: "#E85B4F", fontSize: 18, fontWeight: "700" },
-
   link: {
     textAlign: "center",
     color: "#21413C",

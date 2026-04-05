@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
 import {
   FlatList,
@@ -8,7 +9,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import Screen from "../src/components/Screen";
 import { theme } from "../src/theme";
@@ -62,7 +62,11 @@ const CATEGORIES: {
   label: string;
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
 }[] = [
-  { key: "fruits_legumes", label: "Fruits &\nLégumes", icon: "food-apple-outline" },
+  {
+    key: "fruits_legumes",
+    label: "Fruits &\nLégumes",
+    icon: "food-apple-outline",
+  },
   { key: "boulangerie", label: "Boulangerie", icon: "bread-slice-outline" },
   { key: "boissons", label: "Boissons", icon: "cup-outline" },
   { key: "produits_laitiers", label: "Produits\nlaitiers", icon: "cheese" },
@@ -97,8 +101,9 @@ export default function Home() {
     const q = query.trim().toLowerCase();
     if (!q) return [];
 
-    return MOCK_PRODUCTS
-      .filter((p) => (selectedCategory ? p.category === selectedCategory : true))
+    return MOCK_PRODUCTS.filter((p) =>
+      selectedCategory ? p.category === selectedCategory : true,
+    )
       .filter((p) => p.name.toLowerCase().includes(q))
       .slice(0, 10);
   }, [store, selectedCategory, query]);
@@ -107,9 +112,7 @@ export default function Home() {
     setItems((prev) => {
       const existing = prev.find((x) => x.id === p.id);
       if (existing) {
-        return prev.map((x) =>
-          x.id === p.id ? { ...x, qty: x.qty + 1 } : x,
-        );
+        return prev.map((x) => (x.id === p.id ? { ...x, qty: x.qty + 1 } : x));
       }
       return [
         ...prev,
@@ -163,7 +166,11 @@ export default function Home() {
           <Text style={styles.brand}>PathMarket</Text>
         </View>
 
-        <Pressable onPress={() => console.log("menu")} style={styles.menuBtn} hitSlop={10}>
+        <Pressable
+          onPress={() => console.log("menu")}
+          style={styles.menuBtn}
+          hitSlop={10}
+        >
           <MaterialCommunityIcons name="menu" size={26} color="#21413C" />
         </Pressable>
       </View>
@@ -312,7 +319,10 @@ export default function Home() {
               </Pressable>
             </View>
 
-            <Pressable onPress={() => removeItem(item.id)} style={styles.removeBtn}>
+            <Pressable
+              onPress={() => removeItem(item.id)}
+              style={styles.removeBtn}
+            >
               <Text style={styles.removeText}>×</Text>
             </Pressable>
           </View>
@@ -357,22 +367,22 @@ const styles = StyleSheet.create({
   categoriesRow: {
     marginTop: 12,
     marginBottom: 10,
-    width: "92%",
+    width: "100%", // ✅ au lieu de "92%" pour éviter un “cut” visuel
   },
 
-  // ✅ enlever l'espace entre les icônes: pas de gap, pas de padding horizontal
+  // ❌ ne pas centrer une liste scrollable
   categoriesContent: {
-    gap: 0,
-    paddingHorizontal: 0,
-    justifyContent: "center",
-    width: "100%",
+    paddingHorizontal: 8, // ✅ petit padding gauche/droite
+    alignItems: "center",
+    // supprime: justifyContent: "center",
+    // supprime: width: "100%",
+    // supprime: gap: 0 (optionnel)
   },
 
-  // ✅ enlever l'espace entre les items: largeur plus petite + padding minimal
   categoryItem: {
     alignItems: "center",
     gap: 4,
-    width: 60, // réduit => items plus collés
+    width: 60,
     paddingHorizontal: 0,
   },
 

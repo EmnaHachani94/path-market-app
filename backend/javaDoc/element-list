@@ -1,0 +1,9 @@
+fr.doranco.pathMarket
+fr.doranco.pathMarket.controller
+fr.doranco.pathMarket.main
+fr.doranco.pathMarket.model.dto
+fr.doranco.pathMarket.model.entity
+fr.doranco.pathMarket.repository
+fr.doranco.pathMarket.security
+fr.doranco.pathMarket.service
+fr.doranco.pathMarket.utils

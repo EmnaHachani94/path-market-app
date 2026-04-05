@@ -1,10 +1,10 @@
 package fr.doranco.pathMarket.service;
 
-import fr.doranco.pathMarket.model.dto.UserRegisterRequestDto;
 import fr.doranco.pathMarket.model.dto.UserResponseDto;
 import fr.doranco.pathMarket.model.entity.Utilisateur;
 import fr.doranco.pathMarket.repository.IUtilisateurRepository;
 import fr.doranco.pathMarket.utils.DtoConverter;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,12 +17,13 @@ import java.util.Optional;
 @Service
 public class UtilisateurService implements IUtilisateurService {
 
-    // @Autowired
     private final IUtilisateurRepository utilisateurRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UtilisateurService(IUtilisateurRepository utilisateurRepository) {
-
+    public UtilisateurService(IUtilisateurRepository utilisateurRepository,
+                              PasswordEncoder passwordEncoder) {
         this.utilisateurRepository = utilisateurRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -31,17 +32,28 @@ public class UtilisateurService implements IUtilisateurService {
             throw new IllegalArgumentException("L'utilisateur ne peut pas être vide !");
         }
         if (utilisateur.getAdresseEmail() == null || utilisateur.getAdresseEmail().trim().isEmpty()) {
-            throw new IllegalArgumentException(" L'email est obligatoire! ");
-        }/*
+            throw new IllegalArgumentException("L'email est obligatoire !");
+        }
+        if (utilisateur.getPseudo() == null || utilisateur.getPseudo().trim().isEmpty()
+                || utilisateur.getMotDePasse() == null || utilisateur.getMotDePasse().trim().isEmpty()
+                || utilisateur.getDateDeNaissance() == null) {
+            throw new IllegalArgumentException("Vous devez remplir tous les champs !");
+        }
+
+        // Optionnel: majorité
+        /*
         if (!estMajeur(utilisateur.getDateDeNaissance())) {
-            throw new IllegalArgumentException(" vous devez être Majeur. ");
-        }*/
-        if (utilisateur.getPseudo() == null || utilisateur.getMotDePasse() == null) {
-            throw new IllegalArgumentException(" vous devez remplir tous les champs !");
+            throw new IllegalArgumentException("Vous devez être majeur.");
         }
+        */
+
         if (utilisateurRepository.existsByAdresseEmail(utilisateur.getAdresseEmail())) {
-            throw new RuntimeException("cet email est déjà utilisé !");
+            throw new RuntimeException("Cet email est déjà utilisé !");
         }
+
+        // ✅ hash mot de passe avant save
+        utilisateur.setMotDePasse(passwordEncoder.encode(utilisateur.getMotDePasse()));
+
         return utilisateurRepository.save(utilisateur);
     }
 
@@ -52,18 +64,24 @@ public class UtilisateurService implements IUtilisateurService {
         }
         Utilisateur existingUser = utilisateurRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur n'existe pas !"));
-        existingUser.setPseudo(utilisateur.getPseudo());
-        existingUser.setMotDePasse(utilisateur.getMotDePasse());
-        existingUser.setDateDeNaissance(utilisateur.getDateDeNaissance());
+
+        // Mise à jour des champs
+        if (utilisateur.getPseudo() != null) {
+            existingUser.setPseudo(utilisateur.getPseudo());
+        }
+
+        // Si on reçoit un mot de passe non vide, on le re-hash
+        if (utilisateur.getMotDePasse() != null && !utilisateur.getMotDePasse().trim().isEmpty()) {
+            existingUser.setMotDePasse(passwordEncoder.encode(utilisateur.getMotDePasse()));
+        }
+
+        if (utilisateur.getDateDeNaissance() != null) {
+            existingUser.setDateDeNaissance(utilisateur.getDateDeNaissance());
+        }
+
+        // (tu ne mets pas à jour l'email ici dans ton code original)
         return utilisateurRepository.save(existingUser);
     }
-
-    /**
-     * Une methode qui vérifie si l'utilisateur est Majeur ou non, retourn true si l'age >= 18ans.
-     *
-     * @param dateDeNaissance
-     * @return
-     */
 
     private boolean estMajeur(LocalDate dateDeNaissance) {
         int age = Period.between(dateDeNaissance, LocalDate.now()).getYears();
@@ -73,7 +91,6 @@ public class UtilisateurService implements IUtilisateurService {
     @Override
     @Transactional(readOnly = true)
     public List<UserResponseDto> getUsers() {
-
         List<Utilisateur> users = utilisateurRepository.findAll();
         List<UserResponseDto> dtos = new ArrayList<>();
         for (Utilisateur user : users) {
@@ -89,7 +106,6 @@ public class UtilisateurService implements IUtilisateurService {
         }
         return utilisateurRepository.findUtilisateurByAdresseEmail(adresseEmail);
     }
-
 
     @Override
     public void supprimerUtilisateur(Long id) {

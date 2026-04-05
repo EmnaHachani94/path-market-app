@@ -12,14 +12,14 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
  * param strength Le facteur de coût (strength) utilisé pour le hachage. Plus le facteur est élevé, plus le hachage est sécurisé, mais aussi plus il est lent à calculer. La valeur par défaut est 10.
  */
 
-public class BCryptPasswordService implements IpasswordService{
+public class BCryptPasswordService implements PasswordService {
     private final BCryptPasswordEncoder encoder;
     public BCryptPasswordService(int strength){
         this.encoder = new BCryptPasswordEncoder(strength);
     }
 
     @Override
-    public String hashPassword(String rawPassword) throws Exception {
+    public String hashPassword(String rawPassword){
         return "";
     }
 

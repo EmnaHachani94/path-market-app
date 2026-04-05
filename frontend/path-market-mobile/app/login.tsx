@@ -1,30 +1,42 @@
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
-import FormCard from "../src/components/FormCard";
 
 import AuthHeader from "@/src/components/AuthHeader";
+import FormCard from "../src/components/FormCard";
 import FormField from "../src/components/FormField";
 import PrimaryButton from "../src/components/PrimaryButton";
 import Screen from "../src/components/Screen";
+
+import { API_BASE_URL } from "../src/config/Api";
+<source />;
+
+type LoginResponse = {
+  userId: number;
+  pseudo: string;
+  adresseEmail: string;
+};
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [loading, setLoading] = useState(false);
+
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {},
   );
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     const newErrors: { email?: string; password?: string } = {};
 
     if (!email.trim()) newErrors.email = "Email obligatoire";
@@ -33,8 +45,38 @@ export default function Login() {
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
-    // TODO: login (API)
-    // router.replace("/home");
+    try {
+      setLoading(true);
+
+      const payload = {
+        adresseEmail: email.trim(),
+        motDePasse: password,
+      };
+
+      const res = await fetch(`${API_BASE_URL}/api/rest/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        // backend: 401 si identifiants incorrects
+        const txt = await res.text().catch(() => "");
+        const msg =
+          res.status === 401
+            ? "Email ou mot de passe incorrect"
+            : txt || `Erreur (${res.status})`;
+        throw new Error(msg);
+      }
+
+      const data = (await res.json()) as LoginResponse;
+
+      router.replace("/home");
+    } catch (e: any) {
+      Alert.alert("Connexion", e?.message ?? "Erreur de connexion");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -95,8 +137,9 @@ export default function Login() {
             />
 
             <PrimaryButton
-              title="Se connecter"
+              title={loading ? "Connexion..." : "Se connecter"}
               onPress={onSubmit}
+              disabled={loading}
               style={{ width: "100%" }}
             />
 
@@ -140,6 +183,7 @@ const styles = StyleSheet.create({
     maxWidth: 560,
     height: 250, // fixe pour laisser de la place au formulaire
     marginLeft: "40%",
+    zIndex: -1,
   },
 
   link: {

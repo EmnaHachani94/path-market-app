@@ -4,7 +4,7 @@ package fr.doranco.pathMarket.security;
  *
  * Cette interface définit les opérations essentielles pour assurer la sécurité des mots de passe dans l'application.
  */
-public interface IpasswordService {
-    String hashPassword(String rawPassword) throws Exception;
+public interface PasswordService {
+    String hashPassword(String rawPassword);
     boolean matches(String rawPassword, String hashedPassword) throws Exception ;
 }
