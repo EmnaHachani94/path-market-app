@@ -10,6 +10,12 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+/**
+ * Repository pour l'entité Utilisateur.
+ * Fournit des méthodes pour interagir avec la base de données concernant les utilisateurs.
+ * Cette interface étend JpaRepository, ce qui lui permet d'hériter de nombreuses méthodes
+ * de base pour la gestion des entités, telles que save, findById, findAll, deleteById, etc.
+ */
 public interface IUtilisateurRepository extends JpaRepository<Utilisateur, Long> {
 
     Optional<Utilisateur> findUtilisateurByAdresseEmail(String adresseEmail);

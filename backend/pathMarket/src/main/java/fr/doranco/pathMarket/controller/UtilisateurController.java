@@ -20,7 +20,6 @@ import java.util.Optional;
 public class UtilisateurController implements IUtilisateurController{
     @Autowired
     private IUtilisateurService utilisateurService;
-
     public UtilisateurController(IUtilisateurService utilisateurService){
         this.utilisateurService = utilisateurService;
     }
@@ -34,10 +33,7 @@ public class UtilisateurController implements IUtilisateurController{
             value = "/create",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-
     public ResponseEntity<Long> addUtilisateur(@RequestBody Utilisateur utilisateur) {
-
-        //System.out.println("Utilisateur reçu : " + utilisateur)
         try {
             Utilisateur user = utilisateurService.addUtilisateur(utilisateur);
             return new ResponseEntity<>(user.getId(), HttpStatus.CREATED);
@@ -70,7 +66,6 @@ public class UtilisateurController implements IUtilisateurController{
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
     @Override
     @GetMapping(
             value = "/all",

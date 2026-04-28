@@ -51,7 +51,7 @@ public class UtilisateurService implements IUtilisateurService {
             throw new RuntimeException("Cet email est déjà utilisé !");
         }
 
-        // ✅ hash mot de passe avant save
+        // hash mot de passe avant save
         utilisateur.setMotDePasse(passwordEncoder.encode(utilisateur.getMotDePasse()));
 
         return utilisateurRepository.save(utilisateur);
@@ -82,12 +82,10 @@ public class UtilisateurService implements IUtilisateurService {
         // (tu ne mets pas à jour l'email ici dans ton code original)
         return utilisateurRepository.save(existingUser);
     }
-
     private boolean estMajeur(LocalDate dateDeNaissance) {
         int age = Period.between(dateDeNaissance, LocalDate.now()).getYears();
         return age >= 18;
     }
-
     @Override
     @Transactional(readOnly = true)
     public List<UserResponseDto> getUsers() {
