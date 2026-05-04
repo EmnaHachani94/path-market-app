@@ -11,16 +11,16 @@ import java.util.List;
 
 public interface IUtilisateurController {
     /**
-     * Ajouter un utilisateur
-     *
-     * @param utilisateur
-     * @return l'identifiant de l'utilisateur créé ou une erreur si les données sont invalides ou si l'utilisateur existe déjà.
+     * Ajouter un nouvel utilisateur.
+     * L'utilisateur doit fournir une adresse email valide, un mot de passe sécurisé, un pseudo unique et une date de naissance valide.
+     * @param dto
+     * @return
      */
     @PostMapping(
             value = "/create",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<Long> addUtilisateur(@RequestBody Utilisateur utilisateur);
+    ResponseEntity<Long> addUtilisateur(UserRegisterRequestDto dto);
 
     /**
      * Mettre à jour un utilisateur existant.

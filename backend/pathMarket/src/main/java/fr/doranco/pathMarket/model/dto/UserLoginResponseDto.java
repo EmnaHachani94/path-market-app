@@ -10,4 +10,6 @@ public class UserLoginResponseDto {
     private Long userId;
     private String pseudo;
     private String adresseEmail;
+    private String accessToken;
+
 }

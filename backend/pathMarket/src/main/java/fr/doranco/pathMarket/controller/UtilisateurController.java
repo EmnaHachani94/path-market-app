@@ -4,15 +4,21 @@ import fr.doranco.pathMarket.model.dto.UserRegisterRequestDto;
 import fr.doranco.pathMarket.model.dto.UserResponseDto;
 import fr.doranco.pathMarket.model.entity.Utilisateur;
 import fr.doranco.pathMarket.service.IUtilisateurService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -23,18 +29,31 @@ public class UtilisateurController implements IUtilisateurController{
     public UtilisateurController(IUtilisateurService utilisateurService){
         this.utilisateurService = utilisateurService;
     }
-    /**
-     * Création d'un utilisateur.
-     * @param utilisateur
-     * @return utilisateur crée s'il n'existe pas ou bien un utilisateur modifié s'il est existe.
-     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
+        Map<String, String> fieldErrors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors()
+                .forEach(fe -> fieldErrors.put(fe.getField(), fe.getDefaultMessage()));
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("message", "Données invalides");
+        body.put("fieldErrors", fieldErrors);
+
+        return ResponseEntity.badRequest().body(body);
+    }
+
     @Override
     @PostMapping(
             value = "/create",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Long> addUtilisateur(@RequestBody Utilisateur utilisateur) {
+    public ResponseEntity<Long> addUtilisateur(@RequestBody @Valid UserRegisterRequestDto dto) {
         try {
+            Utilisateur utilisateur = new Utilisateur();
+            utilisateur.setAdresseEmail(dto.getAdresseEmail());
+            utilisateur.setMotDePasse(dto.getMotDePasse());
+            utilisateur.setPseudo(dto.getPseudo());
+            utilisateur.setDateDeNaissance(dto.getDateDeNaissance());
             Utilisateur user = utilisateurService.addUtilisateur(utilisateur);
             return new ResponseEntity<>(user.getId(), HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
@@ -124,5 +143,7 @@ public class UtilisateurController implements IUtilisateurController{
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
+
     }
 }

@@ -1,5 +1,7 @@
 package fr.doranco.pathMarket.model.dto;
 
+import fr.doranco.pathMarket.security.ValidPassword;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
@@ -15,9 +17,11 @@ public class UserRegisterRequestDto {
     private String pseudo;
     @NotBlank
     @Size(min = 5, max = 50, message = "L'adresse email doit comporter entre 5 et 50 caractères")
+    @Email(message = "Format d'email invalide")
     private String adresseEmail;
     @NotBlank
-    @Size(min = 16, max = 20, message = "Le mot de passe doit comporter entre 16 et 20 caractères")
+    @Size(min = 12, message = "Le mot de passe doit comporter minimum 12 caractères")
+    @ValidPassword
     private String motDePasse;
 
     @Past
