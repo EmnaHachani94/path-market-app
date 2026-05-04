@@ -1,7 +1,6 @@
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -27,16 +26,18 @@ type LoginResponse = {
 };
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
 
   const [loading, setLoading] = useState(false);
 
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {},
   );
+  const [apiError, setApiError] = useState<string>("");
 
   const onSubmit = async () => {
+    setApiError("");
     const newErrors: { email?: string; password?: string } = {};
 
     if (!email.trim()) newErrors.email = "Email obligatoire";
@@ -53,27 +54,44 @@ export default function Login() {
         motDePasse: password,
       };
 
+      console.log("LOGIN: start");
+
       const res = await fetch(`${API_BASE_URL}/api/rest/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
+      console.log("LOGIN: status", res.status);
+
+      // Lire le body UNE seule fois
+      const raw = await res.text();
+      console.log("LOGIN: raw", raw);
+
+      let json: any = null;
+      try {
+        json = raw ? JSON.parse(raw) : null;
+      } catch {
+        // pas du JSON
+      }
+
       if (!res.ok) {
-        // backend: 401 si identifiants incorrects
-        const txt = await res.text().catch(() => "");
         const msg =
-          res.status === 401
+          json?.message ||
+          (res.status === 401
             ? "Email ou mot de passe incorrect"
-            : txt || `Erreur (${res.status})`;
+            : raw || `Erreur (${res.status})`);
+
         throw new Error(msg);
       }
 
-      const data = (await res.json()) as LoginResponse;
+      // succès: si json est null (body vide), on met un objet vide
+      const data = (json ?? {}) as LoginResponse;
 
       router.replace("/home");
     } catch (e: any) {
-      Alert.alert("Connexion", e?.message ?? "Erreur de connexion");
+      console.log("LOGIN: caught error", e?.message, e);
+      setApiError(e?.message ?? "Erreur de connexion");
     } finally {
       setLoading(false);
     }
@@ -128,14 +146,16 @@ export default function Login() {
               label="Mot de passe"
               error={errors.password}
               inputProps={{
-                placeholder: "••••••••",
+                placeholder: "••••••••••••",
                 secureTextEntry: true,
                 value: password,
                 onChangeText: (t: string) => setPassword(t),
                 returnKeyType: "done",
               }}
             />
-
+            {apiError ? (
+              <Text style={{ color: "red", marginTop: 10 }}>{apiError}</Text>
+            ) : null}
             <PrimaryButton
               title={loading ? "Connexion..." : "Se connecter"}
               onPress={onSubmit}

@@ -3,9 +3,8 @@ import { API_BASE_URL } from "../config/Api";
 function frSlashToDash(fr) {
   const [dd, mm, yyyy] = fr.trim().split("/");
   if (!dd || !mm || !yyyy) throw new Error("Date invalide (JJ/MM/AAAA)");
-  return `${dd}-${mm}-${yyyy}`; 
+  return `${dd}-${mm}-${yyyy}`;
 }
-
 export async function registerUser({ nom, email, password, dateNaissance }) {
   const payload = {
     pseudo: nom.trim(),
@@ -15,7 +14,6 @@ export async function registerUser({ nom, email, password, dateNaissance }) {
   };
 
   const url = `${API_BASE_URL}/api/rest/user/create`;
-
   console.log("REGISTER URL:", url);
   console.log("REGISTER PAYLOAD:", payload);
 
@@ -28,9 +26,11 @@ export async function registerUser({ nom, email, password, dateNaissance }) {
     body: JSON.stringify(payload),
   });
 
+  const data = await res.json().catch(() => null);
+
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || `HTTP ${res.status}`);
+    throw data || { message: `HTTP ${res.status}` };
   }
-  return res.json().catch(() => res.text());
+
+  return data;
 }

@@ -16,6 +16,7 @@ import AuthHeader from "../src/components/AuthHeader";
 import FormField from "../src/components/FormField";
 import PrimaryButton from "../src/components/PrimaryButton";
 import Screen from "../src/components/Screen";
+
 import { registerUser } from "../src/services/authentificationApi";
 
 export default function Register() {
@@ -24,14 +25,17 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const [errors, setErrors] = useState({
-    nom: "",
-    dateNaissance: "",
-    email: "",
-    password: "",
-  });
+  // erreurs par champ
+  const [errors, setErrors] = useState<{
+    nom?: string;
+    dateNaissance?: string;
+    email?: string;
+    password?: string;
+    global?: string;
+  }>({});
 
   const [loading, setLoading] = useState(false);
+
   const formatDOB = (text: string) => {
     const digits = text.replace(/\D/g, "").slice(0, 8);
     const dd = digits.slice(0, 2);
@@ -43,19 +47,31 @@ export default function Register() {
     return `${dd}/${mm}/${yyyy}`;
   };
 
+  const isEmailValid = (v: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
   const onSubmit = async () => {
-    const newErrors = { nom: "", dateNaissance: "", email: "", password: "" };
+    // reset erreurs
+    setErrors({});
+
+    const newErrors: any = {};
 
     if (!nom.trim()) newErrors.nom = "Nom obligatoire";
     if (!dateNaissance.trim())
       newErrors.dateNaissance = "Date de naissance obligatoire";
+
     if (!email.trim()) newErrors.email = "Email obligatoire";
+    else if (!isEmailValid(email)) newErrors.email = "Format d'email invalide";
+
     if (!password.trim()) newErrors.password = "Mot de passe obligatoire";
+
     setErrors(newErrors);
-    const hasErrors = Object.values(newErrors).some((v) => v);
-    if (hasErrors) return;
+
+    if (Object.keys(newErrors).length > 0) return;
+
     try {
       setLoading(true);
+
       const result = await registerUser({
         nom,
         email,
@@ -67,14 +83,39 @@ export default function Register() {
 
       router.replace("/home");
     } catch (e: any) {
-      console.log("Register ERROR:", e?.message ?? e);
-      setErrors((prev) => ({
-        ...prev,
-        email: e?.message ?? "Erreur inscription",
-      }));
-      console.log("Register ERROR:", e?.message ?? e);
-    } finally {
-      setLoading(false);
+      console.log("Register ERROR RAW:", e);
+
+      // reset erreurs
+      setErrors({});
+
+      let data: any = null;
+
+      try {
+        // si e est une string JSON
+        data = typeof e === "string" ? JSON.parse(e) : e;
+      } catch {
+        data = e;
+      }
+
+      const fieldErrors = data?.fieldErrors;
+
+      const newErrors: any = {};
+
+      // ✅ mapping correct
+      if (fieldErrors?.motDePasse) {
+        newErrors.password = fieldErrors.motDePasse;
+      }
+
+      if (fieldErrors?.adresseEmail) {
+        newErrors.email = fieldErrors.adresseEmail;
+      }
+
+      // ✅ erreur globale propre
+      if (data?.message && Object.keys(newErrors).length === 0) {
+        newErrors.global = data.message;
+      }
+
+      setErrors(newErrors);
     }
   };
 
@@ -83,7 +124,6 @@ export default function Register() {
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
       >
         <ScrollView
           contentContainerStyle={styles.container}
@@ -100,7 +140,7 @@ export default function Register() {
             </View>
           </View>
 
-          <AuthHeader title="Creer un compte" />
+          <AuthHeader title="Créer un compte" />
 
           <FormCard>
             <FormField
@@ -109,8 +149,7 @@ export default function Register() {
               inputProps={{
                 placeholder: "Votre nom",
                 value: nom,
-                onChangeText: (t: string) => setNom(t),
-                returnKeyType: "next",
+                onChangeText: setNom,
               }}
             />
 
@@ -122,8 +161,7 @@ export default function Register() {
                 value: dateNaissance,
                 keyboardType: "number-pad",
                 maxLength: 10,
-                onChangeText: (t: string) => setDateNaissance(formatDOB(t)),
-                returnKeyType: "next",
+                onChangeText: (t) => setDateNaissance(formatDOB(t)),
               }}
             />
 
@@ -135,8 +173,7 @@ export default function Register() {
                 keyboardType: "email-address",
                 autoCapitalize: "none",
                 value: email,
-                onChangeText: (t: string) => setEmail(t),
-                returnKeyType: "next",
+                onChangeText: setEmail,
               }}
             />
 
@@ -144,14 +181,19 @@ export default function Register() {
               label="Mot de passe"
               error={errors.password}
               inputProps={{
-                placeholder: "••••••••",
+                placeholder: "••••••••••••",
                 secureTextEntry: true,
                 value: password,
-                onChangeText: (t: string) => setPassword(t),
-                returnKeyType: "done",
+                onChangeText: setPassword,
               }}
             />
-
+            {errors.global ? (
+              <Text
+                style={{ color: "red", textAlign: "center", marginTop: 10 }}
+              >
+                {errors.global}
+              </Text>
+            ) : null}
             <PrimaryButton
               title={loading ? "..." : "S’inscrire"}
               onPress={onSubmit}
