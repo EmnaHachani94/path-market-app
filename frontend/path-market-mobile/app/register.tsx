@@ -101,7 +101,7 @@ export default function Register() {
 
       const newErrors: any = {};
 
-      // ✅ mapping correct
+      //  mapping
       if (fieldErrors?.motDePasse) {
         newErrors.password = fieldErrors.motDePasse;
       }
@@ -110,12 +110,13 @@ export default function Register() {
         newErrors.email = fieldErrors.adresseEmail;
       }
 
-      // ✅ erreur globale propre
+      //erreur globale
       if (data?.message && Object.keys(newErrors).length === 0) {
         newErrors.global = data.message;
       }
 
       setErrors(newErrors);
+      setLoading(false);
     }
   };
 
