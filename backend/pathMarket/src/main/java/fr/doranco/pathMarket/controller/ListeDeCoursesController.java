@@ -10,12 +10,13 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import fr.doranco.pathMarket.model.dto.ListeDeCoursesDetailResponseDto;
 @RestController
 @CrossOrigin(origins = "*")
 @RequestMapping("/api/rest/Listes")
 public class ListeDeCoursesController {
     private final ListeCoursesService listeCoursesService;
+
 
     public ListeDeCoursesController(ListeCoursesService listeCoursesService) {
         this.listeCoursesService = listeCoursesService;
@@ -44,5 +45,13 @@ public class ListeDeCoursesController {
     ) {
         LigneListe ligne = listeCoursesService.addLigne(listeId, req.getProduitId(), req.getQuantite());
         return new ResponseEntity<>(ligne.getId(), HttpStatus.CREATED);
+    }
+
+    @GetMapping(value = "/{listeId}", produces = "application/json")
+    public ResponseEntity<ListeDeCoursesDetailResponseDto> getListeDetail(@PathVariable Long listeId) {
+
+        ListeDeCoursesDetailResponseDto dto = listeCoursesService.getListeDetailGroupByRayon(listeId);
+
+        return ResponseEntity.ok(dto);
     }
 }

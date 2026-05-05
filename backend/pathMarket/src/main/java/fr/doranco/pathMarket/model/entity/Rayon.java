@@ -37,12 +37,6 @@ public class Rayon {
     @OneToMany(mappedBy = "rayon",fetch = FetchType.LAZY)
     private List<Produit> produits;
 
-    /**
-     * Un rayon peut appartenir à plusieurs parcours.
-     */
-    @OneToMany(mappedBy = "rayon",fetch = FetchType.LAZY)
-    private List<DispositionMagasin> parcours;
-
 }
 
 
