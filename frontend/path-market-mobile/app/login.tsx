@@ -15,15 +15,7 @@ import FormCard from "../src/components/FormCard";
 import FormField from "../src/components/FormField";
 import PrimaryButton from "../src/components/PrimaryButton";
 import Screen from "../src/components/Screen";
-
-import { API_BASE_URL } from "../src/config/Api";
-<source />;
-
-type LoginResponse = {
-  userId: number;
-  pseudo: string;
-  adresseEmail: string;
-};
+import { loginUser } from "../src/services/authentificationApi";
 
 export default function Login() {
   const [email, setEmail] = useState<string>("");
@@ -49,44 +41,10 @@ export default function Login() {
     try {
       setLoading(true);
 
-      const payload = {
-        adresseEmail: email.trim(),
+      await loginUser({
+        adresseEmail: email,
         motDePasse: password,
-      };
-
-      console.log("LOGIN: start");
-
-      const res = await fetch(`${API_BASE_URL}/api/rest/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
       });
-
-      console.log("LOGIN: status", res.status);
-
-      // Lire le body UNE seule fois
-      const raw = await res.text();
-      console.log("LOGIN: raw", raw);
-
-      let json: any = null;
-      try {
-        json = raw ? JSON.parse(raw) : null;
-      } catch {
-        // pas du JSON
-      }
-
-      if (!res.ok) {
-        const msg =
-          json?.message ||
-          (res.status === 401
-            ? "Email ou mot de passe incorrect"
-            : raw || `Erreur (${res.status})`);
-
-        throw new Error(msg);
-      }
-
-      // succès: si json est null (body vide), on met un objet vide
-      const data = (json ?? {}) as LoginResponse;
 
       router.replace("/home");
     } catch (e: any) {
@@ -153,9 +111,11 @@ export default function Login() {
                 returnKeyType: "done",
               }}
             />
+
             {apiError ? (
               <Text style={{ color: "red", marginTop: 10 }}>{apiError}</Text>
             ) : null}
+
             <PrimaryButton
               title={loading ? "Connexion..." : "Se connecter"}
               onPress={onSubmit}

@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../config/api";
+import { API_BASE_URL } from "../config/Api";
 
 export async function fetchUsers() {
   const res = await fetch(`${API_BASE_URL}/api/rest/user/all`, {
