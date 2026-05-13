@@ -2,14 +2,20 @@ import { API_BASE_URL } from "../config/Api";
 import { getToken } from "./tokenStorage";
 
 async function buildHeaders(extraHeaders = {}) {
-  const token = await getToken();
+  let token = null;
+
+  try {
+    token = await getToken();
+  } catch (e) {
+    console.warn("getToken failed, continuing without token:", e?.message ?? e);
+    token = null;
+  }
 
   const headers = {
     Accept: "application/json",
     ...extraHeaders,
   };
 
-  // Ajoute Authorization seulement si token présent
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }

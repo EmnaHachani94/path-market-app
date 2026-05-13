@@ -1,556 +1,380 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  FlatList,
-  Image,
+  ActivityIndicator,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import {
+  addLigneToListe,
+  createListe,
+  fetchListeDetail,
+} from "../src/services/listeApi";
+import { fetchMagasins } from "../src/services/magasinApi";
+import { searchProduits } from "../src/services/produitApi";
 
-import Screen from "../src/components/Screen";
-import { theme } from "../src/theme";
-
-type StoreKey =
-  | "auchan"
-  | "leclerc"
-  | "carrefour"
-  | "intermarche"
-  | "casino"
-  | "monoprix";
-
-type CategoryKey =
-  | "fruits_legumes"
-  | "boulangerie"
-  | "boissons"
-  | "produits_laitiers"
-  | "viandes"
-  | "pates"
-  | "epicerie";
-
-type Product = {
-  id: string;
-  name: string;
-  category?: CategoryKey;
+// ---- Types ----
+type Magasin = { id: number; nom: string; adresse: string };
+type ListeDeCoursesDetailResponseDto = {
+  ListeId: number;
+  nomListe: string;
+  dateDeCreation: string;
+  magasinId: number;
+  nomMagasin: string;
+  rayons: {
+    rayonId: number;
+    nomRayon: string;
+    ordreVisite: number;
+    Lignes: {
+      idLigne: number;
+      produitId: number;
+      nomProduit: string;
+      quantite: number;
+      statut: boolean;
+      rayonId: number;
+      nomRayon: string;
+    }[];
+  }[];
 };
-
-type ListItem = {
-  id: string;
-  name: string;
-  qty: number;
-  checked: boolean;
-  category?: CategoryKey;
-};
-
-const STORES: {
-  key: StoreKey;
-  label: string;
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
-}[] = [
-  { key: "auchan", label: "Auchan", icon: "cart-outline" },
-  { key: "leclerc", label: "Leclerc", icon: "store-outline" },
-  { key: "carrefour", label: "Carrefour", icon: "shopping-outline" },
-  { key: "intermarche", label: "Intermarché", icon: "basket-outline" },
-  { key: "casino", label: "Casino", icon: "storefront-outline" },
-  { key: "monoprix", label: "Monoprix", icon: "shopping-search" },
-];
-
-const CATEGORIES: {
-  key: CategoryKey;
-  label: string;
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
-}[] = [
-  {
-    key: "fruits_legumes",
-    label: "Fruits &\nLégumes",
-    icon: "food-apple-outline",
-  },
-  { key: "boulangerie", label: "Boulangerie", icon: "bread-slice-outline" },
-  { key: "boissons", label: "Boissons", icon: "cup-outline" },
-  { key: "produits_laitiers", label: "Produits\nlaitiers", icon: "cheese" },
-  { key: "viandes", label: "Viandes", icon: "food-drumstick-outline" },
-  { key: "pates", label: "Pâtes", icon: "pasta" },
-  { key: "epicerie", label: "Épicerie", icon: "food-variant" },
-];
-
-// Mock (remplacé plus tard par ton backend recherche)
-const MOCK_PRODUCTS: Product[] = [
-  { id: "1", name: "Lait", category: "produits_laitiers" },
-  { id: "2", name: "Oeufs", category: "produits_laitiers" },
-  { id: "3", name: "Farine", category: "boulangerie" },
-  { id: "4", name: "Pain", category: "boulangerie" },
-  { id: "5", name: "Pommes", category: "fruits_legumes" },
-  { id: "6", name: "Jus d'orange", category: "boissons" },
-  { id: "7", name: "Spaghetti", category: "pates" },
-  { id: "8", name: "Riz", category: "epicerie" },
-  { id: "9", name: "Huile d'olive", category: "epicerie" },
-];
 
 export default function Home() {
-  const [store, setStore] = useState<StoreKey | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<CategoryKey | null>(
+  // Magasins / sélection
+  const [magasins, setMagasins] = useState<Magasin[]>([]);
+  const [selectedMagasinId, setSelectedMagasinId] = useState<number | null>(
     null,
   );
-  const [query, setQuery] = useState("");
-  const [items, setItems] = useState<ListItem[]>([]);
+  const [loadingMagasins, setLoadingMagasins] = useState(false);
+  // Utilisateur (à adapter avec ton auth si besoin)
+  const [utilisateurId] = useState<number>(1);
 
-  const results = useMemo(() => {
-    if (!store) return [];
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
+  // Création liste
+  const [nomListe, setNomListe] = useState("");
+  const [listeId, setListeId] = useState<number | null>(null);
+  const [listeDetail, setListeDetail] =
+    useState<ListeDeCoursesDetailResponseDto | null>(null);
+  const [loadingListe, setLoadingListe] = useState(false);
 
-    return MOCK_PRODUCTS.filter((p) =>
-      selectedCategory ? p.category === selectedCategory : true,
-    )
-      .filter((p) => p.name.toLowerCase().includes(q))
-      .slice(0, 10);
-  }, [store, selectedCategory, query]);
+  // Recherche produits
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [loadingResults, setLoadingResults] = useState(false);
 
-  const addItem = (p: Product) => {
-    setItems((prev) => {
-      const existing = prev.find((x) => x.id === p.id);
-      if (existing) {
-        return prev.map((x) => (x.id === p.id ? { ...x, qty: x.qty + 1 } : x));
-      }
-      return [
-        ...prev,
-        {
-          id: p.id,
-          name: p.name,
-          qty: 1,
-          checked: false,
-          category: p.category,
-        },
-      ];
-    });
+  // --- Chargement magasins ---
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingMagasins(true);
+    fetchMagasins()
+      .then((data) => {
+        if (!cancelled) setMagasins(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setMagasins([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingMagasins(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-    setQuery("");
-  };
+  // --- Création liste ---
+  async function handleCreerListe() {
+    if (!nomListe || !selectedMagasinId || !utilisateurId) {
+      alert("Complète le nom, le magasin et l'utilisateur !");
+      return;
+    }
+    setLoadingListe(true);
+    try {
+      const res = await createListe({
+        nomListe,
+        magasinId: selectedMagasinId,
+        utilisateurId,
+      });
+      setListeId(res.id ?? res.listeId ?? res.ListeId); // support différents naming backend
+      const detail = await fetchListeDetail(
+        res.id ?? res.listeId ?? res.ListeId,
+      );
+      setListeDetail(detail);
+    } catch (e: any) {
+      alert(e?.message || "Erreur lors de la création de la liste");
+    } finally {
+      setLoadingListe(false);
+    }
+  }
 
-  const toggleChecked = (id: string) => {
-    setItems((prev) =>
-      prev.map((x) => (x.id === id ? { ...x, checked: !x.checked } : x)),
-    );
-  };
+  // --- Recherche produits dynamique ---
+  useEffect(() => {
+    if (searchQuery.length >= 2 && selectedMagasinId && listeId) {
+      setLoadingResults(true);
+      searchProduits(searchQuery, selectedMagasinId)
+        .then((results) =>
+          setSearchResults(Array.isArray(results) ? results : []),
+        )
+        .catch(() => setSearchResults([]))
+        .finally(() => setLoadingResults(false));
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery, selectedMagasinId, listeId]);
 
-  const incQty = (id: string) => {
-    setItems((prev) =>
-      prev.map((x) => (x.id === id ? { ...x, qty: x.qty + 1 } : x)),
-    );
-  };
+  // --- Ajout d'un produit dans la liste puis refresh de la liste ordonnée (groupée rayons) ---
+  async function handleAjouterProduit(produitId: number, quantite = 1) {
+    if (!listeId) return;
+    setLoadingListe(true);
+    try {
+      await addLigneToListe({ listeId, produitId, quantite });
+      const data = await fetchListeDetail(listeId);
+      setListeDetail(data);
+      setSearchResults([]); // vide la recherche
+      setSearchQuery("");
+    } finally {
+      setLoadingListe(false);
+    }
+  }
 
-  const decQty = (id: string) => {
-    setItems((prev) =>
-      prev.map((x) =>
-        x.id === id ? { ...x, qty: Math.max(1, x.qty - 1) } : x,
-      ),
-    );
-  };
-
-  const removeItem = (id: string) => {
-    setItems((prev) => prev.filter((x) => x.id !== id));
-  };
-
-  const Header = (
-    <View>
-      {/* Brand + menu */}
-      <View style={styles.brandHeader}>
-        <View style={styles.logoRow}>
-          <Image
-            source={require("../assets/images/logo.png")}
-            style={styles.logoImg}
-            resizeMode="contain"
-          />
-          <Text style={styles.brand}>PathMarket</Text>
-        </View>
-
+  return (
+    <ScrollView
+      contentContainerStyle={{
+        flexGrow: 1,
+        backgroundColor: "#fff",
+        alignItems: "center",
+        paddingTop: 32,
+        paddingBottom: 40,
+      }}
+      keyboardShouldPersistTaps="handled"
+    >
+      {/* --- Bloc Création Liste --- */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Créer votre liste de courses</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Nom de la liste"
+          value={nomListe}
+          onChangeText={setNomListe}
+        />
+        <Text style={{ fontWeight: "bold", marginVertical: 8 }}>
+          Choisissez votre magasin
+        </Text>
+        {loadingMagasins ? (
+          <ActivityIndicator />
+        ) : (
+          <View style={styles.storeGrid}>
+            {magasins.map((m) => {
+              const active = selectedMagasinId === m.id;
+              return (
+                <Pressable
+                  key={m.id}
+                  onPress={() => setSelectedMagasinId(m.id)}
+                  style={[styles.storeTile, active && styles.storeTileActive]}
+                >
+                  <MaterialCommunityIcons
+                    name="store-outline"
+                    size={22}
+                    color={active ? "#21413C" : "rgba(33,65,60,0.65)"}
+                  />
+                  <Text style={styles.storeLabel}>{m.nom}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
         <Pressable
-          onPress={() => console.log("menu")}
-          style={styles.menuBtn}
-          hitSlop={10}
+          style={styles.creerListeBtn}
+          onPress={handleCreerListe}
+          disabled={loadingListe || !nomListe || !selectedMagasinId}
         >
-          <MaterialCommunityIcons name="menu" size={26} color="#21413C" />
+          <Text style={{ color: "#fff", fontWeight: "bold" }}>
+            {loadingListe ? "Création..." : "Créer la liste"}
+          </Text>
         </Pressable>
       </View>
 
-      {/* Catégories (centrées) */}
-      <View style={styles.categoriesOuter}>
-        <View style={styles.categoriesRow}>
-          <FlatList
-            data={CATEGORIES}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(c) => c.key}
-            contentContainerStyle={styles.categoriesContent}
-            renderItem={({ item: c }) => {
-              const active = selectedCategory === c.key;
-
-              return (
-                <Pressable
-                  onPress={() =>
-                    setSelectedCategory((prev) =>
-                      prev === c.key ? null : c.key,
-                    )
-                  }
-                  style={styles.categoryItem}
-                >
-                  <View
-                    style={[
-                      styles.categoryIconWrap,
-                      active && styles.categoryIconWrapActive,
-                    ]}
-                  >
-                    <MaterialCommunityIcons
-                      name={c.icon}
-                      size={24}
-                      color={active ? "white" : "#21413C"}
-                    />
-                  </View>
-
-                  <Text style={styles.categoryText}>{c.label}</Text>
-                </Pressable>
-              );
-            }}
+      {/* --- Recherche Produits --- */}
+      {listeId && (
+        <View style={styles.card}>
+          <Text style={{ fontWeight: "bold", fontSize: 15 }}>
+            Rechercher un produit à ajouter :
+          </Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Nom du produit (au moins 2 lettres)"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
-        </View>
-      </View>
-
-      {/* Magasin */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Choisissez votre magasin</Text>
-
-        <View style={styles.storeGrid}>
-          {STORES.map((s) => {
-            const active = store === s.key;
-
-            return (
-              <Pressable
-                key={s.key}
-                onPress={() => setStore(s.key)}
-                style={[styles.storeTile, active && styles.storeTileActive]}
-              >
-                <MaterialCommunityIcons
-                  name={s.icon}
-                  size={22}
-                  color={active ? "#21413C" : "rgba(33,65,60,0.65)"}
-                />
-                <Text style={styles.storeLabel}>{s.label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* Recherche */}
-      <View style={styles.searchWrap}>
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder={
-            store ? "Rechercher un produit..." : "Choisissez d'abord un magasin"
-          }
-          editable={!!store}
-          style={[styles.search, !store && styles.searchDisabled]}
-          placeholderTextColor="rgba(33,65,60,0.55)"
-          autoCorrect={false}
-        />
-      </View>
-
-      {/* Résultats */}
-      {store && query.trim() ? (
-        <View style={styles.resultsCard}>
-          {results.length === 0 ? (
-            <Text style={styles.hint}>Aucun produit trouvé.</Text>
+          {loadingResults ? (
+            <Text>Chargement…</Text>
+          ) : Array.isArray(searchResults) &&
+            searchResults.length === 0 &&
+            searchQuery.length > 1 ? (
+            <Text style={{ color: "#E85B4F" }}>
+              Aucun produit trouvé dans ce magasin.
+            </Text>
           ) : (
-            results.map((p) => (
-              <Pressable
-                key={p.id}
-                onPress={() => addItem(p)}
-                style={styles.resultRow}
+            searchResults.map((res) => (
+              <View
+                key={res.id}
+                style={{
+                  marginVertical: 5,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  backgroundColor: "#f5f5f5",
+                  borderRadius: 8,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  minWidth: 210,
+                }}
               >
-                <Text style={styles.resultText}>{p.name}</Text>
-                <View style={styles.resultAdd}>
-                  <Text style={styles.resultAddText}>Ajouter</Text>
-                </View>
-              </Pressable>
+                <Text style={{ fontWeight: "500", fontSize: 16 }}>
+                  {res.nomProduit}
+                  {res.rayonNom ? `  |  Rayon : ${res.rayonNom}` : ""}
+                </Text>
+                <Pressable
+                  style={{
+                    marginLeft: 10,
+                    paddingVertical: 4,
+                    paddingHorizontal: 14,
+                    borderRadius: 7,
+                    backgroundColor: "#21413C",
+                  }}
+                  onPress={() => handleAjouterProduit(res.id)}
+                >
+                  <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                    Ajouter
+                  </Text>
+                </Pressable>
+              </View>
             ))
           )}
         </View>
-      ) : null}
+      )}
 
-      {/* Titre liste */}
-      <View style={styles.listTitleRow}>
-        <Text style={styles.sectionTitle}>Ma liste de courses</Text>
-        <Text style={styles.counter}>{items.length}</Text>
-      </View>
-    </View>
-  );
-
-  return (
-    <Screen style={styles.screen} contentStyle={styles.safe}>
-      <FlatList
-        data={items}
-        keyExtractor={(x) => x.id}
-        ListHeaderComponent={Header}
-        ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-        renderItem={({ item }) => (
-          <View style={styles.itemRow}>
-            <Pressable
-              onPress={() => toggleChecked(item.id)}
-              style={[styles.checkbox, item.checked && styles.checkboxChecked]}
-            />
-
-            <Text
-              style={[styles.itemName, item.checked && styles.itemNameChecked]}
-              numberOfLines={1}
-            >
-              {item.name}
-            </Text>
-
-            <View style={styles.qty}>
-              <Pressable onPress={() => decQty(item.id)} style={styles.qtyBtn}>
-                <Text style={styles.qtyBtnText}>-</Text>
-              </Pressable>
-              <Text style={styles.qtyVal}>{item.qty}</Text>
-              <Pressable onPress={() => incQty(item.id)} style={styles.qtyBtn}>
-                <Text style={styles.qtyBtnText}>+</Text>
-              </Pressable>
-            </View>
-
-            <Pressable
-              onPress={() => removeItem(item.id)}
-              style={styles.removeBtn}
-            >
-              <Text style={styles.removeText}>×</Text>
-            </Pressable>
-          </View>
-        )}
-        ListEmptyComponent={
-          <Text style={styles.hintEmpty}>
-            Ajoute des produits via la recherche.
+      {/* --- Affichage FINAL de la liste groupée, triée par rayon et ordonnée (ordre de visite magasin) --- */}
+      {listeDetail && (
+        <View style={[styles.card, { width: "94%" }]}>
+          <Text style={styles.sectionTitle}>
+            Ma liste de courses (par rayons, ordre magasin)
           </Text>
-        }
-        contentContainerStyle={{ paddingBottom: 18 }}
-        showsVerticalScrollIndicator={false}
-      />
-    </Screen>
+          {loadingListe ? (
+            <ActivityIndicator />
+          ) : Array.isArray(listeDetail.rayons) ? (
+            listeDetail.rayons.length === 0 ? (
+              <Text style={{ color: "#888" }}>
+                Aucun produit dans la liste.
+              </Text>
+            ) : (
+              listeDetail.rayons
+                .slice()
+                .sort((a, b) => a.ordreVisite - b.ordreVisite)
+                .map((rayon, idx) => (
+                  <View key={rayon.rayonId} style={{ marginBottom: 12 }}>
+                    <Text
+                      style={{
+                        fontWeight: "bold",
+                        fontSize: 15,
+                        backgroundColor: "#eaeaea",
+                        borderRadius: 6,
+                        padding: 6,
+                      }}
+                    >
+                      {idx + 1}. {rayon.nomRayon}
+                    </Text>
+                    {Array.isArray(rayon.Lignes) && rayon.Lignes.length > 0 ? (
+                      rayon.Lignes.map((ligne) => (
+                        <Text
+                          key={ligne.idLigne}
+                          style={{ marginLeft: 16, fontSize: 15 }}
+                        >
+                          - {ligne.nomProduit} x{ligne.quantite}
+                        </Text>
+                      ))
+                    ) : (
+                      <Text
+                        style={{
+                          marginLeft: 20,
+                          color: "#bbb",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        Aucun produit dans ce rayon.
+                      </Text>
+                    )}
+                  </View>
+                ))
+            )
+          ) : (
+            <Text style={{ color: "#888" }}>Aucune donnée disponible.</Text>
+          )}
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  safe: { flex: 1, paddingHorizontal: 14, paddingTop: 10 },
-
-  brandHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingBottom: 8,
-  },
-  logoRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  logoImg: { width: 44, height: 44 },
-  brand: { color: "#E85B4F", fontSize: 16, fontWeight: "900" },
-  menuBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1,
-    borderColor: "rgba(33,65,60,0.10)",
-  },
-
-  categoriesOuter: { alignItems: "center" },
-  categoriesRow: {
-    marginTop: 12,
-    marginBottom: 10,
-    width: "100%",
-  },
-
-  categoriesContent: {
-    paddingHorizontal: 8, //
-    alignItems: "center",
-  },
-
-  categoryItem: {
-    alignItems: "center",
-    gap: 4,
-    width: 60,
-    paddingHorizontal: 0,
-  },
-
-  categoryIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.75)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(33,65,60,0.10)",
-  },
-  categoryIconWrapActive: {
-    backgroundColor: "#21413C",
-    borderColor: "rgba(33,65,60,0.25)",
-  },
-  categoryText: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: theme.colors.text,
-    textAlign: "center",
-    lineHeight: 13,
-  },
-
   card: {
-    backgroundColor: "rgba(255,255,255,0.85)",
-    borderRadius: 16,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "rgba(33,65,60,0.10)",
+    margin: 16,
+    padding: 18,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    alignSelf: "center",
+    width: "95%",
+    shadowColor: "#000",
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 3,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: theme.colors.text,
+    fontSize: 17,
+    fontWeight: "bold",
     marginBottom: 10,
+    color: "#21413C",
+    textAlign: "center",
   },
-
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 10,
+    marginVertical: 8,
+    width: "100%",
+    minWidth: 200,
+    alignSelf: "center",
+    fontSize: 15,
+    backgroundColor: "#fafbfb",
+  },
   storeGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
-    rowGap: 10,
+    gap: 8,
+    justifyContent: "center",
   },
   storeTile: {
-    width: "32%",
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    backgroundColor: "rgba(33,65,60,0.05)",
+    padding: 15,
     borderWidth: 1,
-    borderColor: "rgba(33,65,60,0.10)",
-  },
-  storeTileActive: {
-    backgroundColor: "rgba(33,65,60,0.10)",
-    borderColor: "rgba(33,65,60,0.25)",
-  },
-  storeLabel: { fontSize: 11, fontWeight: "900", color: theme.colors.text },
-
-  searchWrap: { marginTop: 10 },
-  search: {
-    height: 44,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: "rgba(33,65,60,0.14)",
-    backgroundColor: "rgba(255,255,255,0.92)",
-    color: theme.colors.text,
-  },
-  searchDisabled: { opacity: 0.55 },
-
-  resultsCard: {
-    marginTop: 10,
-    backgroundColor: "rgba(255,255,255,0.85)",
-    borderRadius: 16,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "rgba(33,65,60,0.10)",
-  },
-  resultRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    backgroundColor: "rgba(33,65,60,0.05)",
-    marginBottom: 8,
-  },
-  resultText: { fontWeight: "900", color: theme.colors.text },
-  resultAdd: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    borderColor: "#ccc",
     borderRadius: 10,
+    margin: 7,
+    alignItems: "center",
+    minWidth: 100,
+    flexDirection: "row",
+    gap: 7,
+    backgroundColor: "#eee",
+  },
+  storeTileActive: { backgroundColor: "#d0f0ea", borderColor: "#007A5C" },
+  storeLabel: { fontWeight: "bold", fontSize: 16 },
+  creerListeBtn: {
+    marginTop: 14,
     backgroundColor: "#21413C",
-  },
-  resultAddText: { color: "white", fontWeight: "900", fontSize: 12 },
-
-  listTitleRow: {
-    marginTop: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  counter: {
-    minWidth: 28,
-    textAlign: "center",
-    fontWeight: "900",
-    color: "#21413C",
-    backgroundColor: "rgba(255,255,255,0.70)",
-    borderWidth: 1,
-    borderColor: "rgba(33,65,60,0.10)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-
-  hint: { color: theme.colors.muted, fontWeight: "700" },
-  hintEmpty: {
-    color: theme.colors.muted,
-    fontWeight: "700",
-    marginTop: 10,
-  },
-
-  itemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.80)",
-    borderWidth: 1,
-    borderColor: "rgba(33,65,60,0.08)",
-  },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: "rgba(33,65,60,0.35)",
-    backgroundColor: "transparent",
-  },
-  checkboxChecked: { backgroundColor: "#21413C", borderColor: "#21413C" },
-
-  itemName: { flex: 1, fontWeight: "900", color: theme.colors.text },
-  itemNameChecked: { textDecorationLine: "line-through", opacity: 0.6 },
-
-  qty: { flexDirection: "row", alignItems: "center", gap: 8 },
-  qtyBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: "rgba(33,65,60,0.16)",
-    backgroundColor: "rgba(255,255,255,0.95)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  qtyBtnText: { fontWeight: "900", color: theme.colors.text, fontSize: 16 },
-  qtyVal: { width: 18, textAlign: "center", fontWeight: "900" },
-
-  removeBtn: {
-    width: 26,
-    height: 26,
     borderRadius: 8,
-    backgroundColor: "rgba(232,91,79,0.15)",
+    padding: 11,
     alignItems: "center",
-    justifyContent: "center",
+    minWidth: 160,
+    alignSelf: "center",
   },
-  removeText: { color: "#E85B4F", fontSize: 18, fontWeight: "900" },
 });

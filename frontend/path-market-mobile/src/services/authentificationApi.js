@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "../config/Api";
-import { saveToken } from "./tokenStorage";
+import { saveAuthSession } from "./tokenStorage";
 
 function frSlashToDash(fr) {
   const [dd, mm, yyyy] = fr.trim().split("/");
@@ -68,9 +68,12 @@ export async function loginUser({ adresseEmail, motDePasse }) {
   }
 
   const data = json ?? {};
-
-  if (data?.accessToken) {
-    await saveToken(data.accessToken);
+  //saveAuthSession permet de stocker accessToken et UserId
+  if (data?.accessToken && data?.userId != null) {
+    await saveAuthSession({
+      accessToken: data.accessToken,
+      userId: data.userId,
+    });
   } else {
     console.warn("LOGIN: pas de accessToken dans la réponse");
   }
