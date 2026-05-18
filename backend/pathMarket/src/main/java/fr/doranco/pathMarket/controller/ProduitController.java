@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/rest/produit")
+@RequestMapping("/api/rest/produits")
 public class ProduitController {
     @Autowired
      private IProduitService produitService;
@@ -31,14 +31,17 @@ public class ProduitController {
         return produit;
     }
 @GetMapping("/search")
-    public ResponseEntity<List<ProduitDto>> findTop10ByNomProduitStartingWithIgnoreCase(@RequestParam String prefixe){
-        try {
-            List<ProduitDto> produits= produitService.findTop10ByNomProduitStartingWithIgnoreCase(prefixe);
-            return ResponseEntity.ok(produits);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
-        }
+public ResponseEntity<List<ProduitDto>> search(
+        @RequestParam String prefixe,
+        @RequestParam Long magasinId
+) {
+    try {
+        List<ProduitDto> produits = produitService.searchByPrefixeAndMagasinOrdered(prefixe, magasinId);
+        return ResponseEntity.ok(produits);
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+    }
     }
 
 }

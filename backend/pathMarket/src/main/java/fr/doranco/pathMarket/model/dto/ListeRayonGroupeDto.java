@@ -9,7 +9,7 @@ public class ListeRayonGroupeDto {
     private Long rayonId;
     private String nomRayon;
     private int ordreVisite;
-    private List<LigneListeResponseDto> Lignes;
+    private List<LigneListeResponseDto> lignes;
 
 
 }

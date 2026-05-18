@@ -11,7 +11,7 @@ export type ListeRayonGroupeDto = {
   rayonId: number;
   nomRayon: string;
   ordreVisite: number;
-  Lignes: LigneListeResponseDto[];
+  lignes: LigneListeResponseDto[];
 };
 export type ListeDeCoursesDetailResponseDto = {
   ListeId: number;

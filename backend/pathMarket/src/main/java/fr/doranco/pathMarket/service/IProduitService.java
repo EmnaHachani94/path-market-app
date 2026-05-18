@@ -18,5 +18,5 @@ public interface IProduitService {
      * @return Une liste de produits correspondant au critère de recherche.
          * @throws IllegalArgumentException si le préfixe est null ou vide.
      */
-       List<ProduitDto> findTop10ByNomProduitStartingWithIgnoreCase(String prefixe);
+       List<ProduitDto> searchByPrefixeAndMagasinOrdered(String prefixe, Long magasinId);
 }

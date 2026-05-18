@@ -1,5 +1,6 @@
 package fr.doranco.pathMarket.controller;
 
+import fr.doranco.pathMarket.model.dto.MagasinDto;
 import fr.doranco.pathMarket.model.entity.Magasin;
 import fr.doranco.pathMarket.repository.IMagasinRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +17,10 @@ public class MagasinController {
     private IMagasinRepository magasinRepository;
 
     @GetMapping
-    public List<Magasin> getAllMagasins() {
-        return magasinRepository.findAll();
+    public List<MagasinDto> getAllMagasins() {
+        return magasinRepository.findAll()
+                .stream()
+                .map(m -> new MagasinDto(m.getId(), m.getNom(), m.getAdresse()))
+                .toList();
     }
 }

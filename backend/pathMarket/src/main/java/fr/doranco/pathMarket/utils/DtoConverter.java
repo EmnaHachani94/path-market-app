@@ -24,6 +24,7 @@ public final class DtoConverter {
         //userRegisterRequestDto.setActive(user.isActive());
         return userRegisterRequestDto;
     }
+
     public static UserResponseDto convertToResponse(Utilisateur user) {
         UserResponseDto dto = new UserResponseDto();
         dto.setId(user.getId());
@@ -34,9 +35,15 @@ public final class DtoConverter {
     }
 
     public static ProduitDto convert(Produit produit) {
-        ProduitDto produitDto = new ProduitDto();
-        produitDto.setId(produit.getId());
-        produitDto.setNomProduit(produit.getNomProduit());
-        return produitDto;
+        ProduitDto dto = new ProduitDto();
+        dto.setId(produit.getId());
+        dto.setNomProduit(produit.getNomProduit());
+
+        if (produit.getRayon() != null) {
+            dto.setRayonId(produit.getRayon().getId());
+            dto.setRayonNom(produit.getRayon().getNomRayon());
+        }
+
+        return dto;
     }
 }

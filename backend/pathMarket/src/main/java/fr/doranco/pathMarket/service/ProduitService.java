@@ -5,30 +5,31 @@ import fr.doranco.pathMarket.model.entity.Produit;
 import fr.doranco.pathMarket.repository.IProduitRepository;
 import fr.doranco.pathMarket.utils.DtoConverter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toList;
 
 @Service
-public class ProduitService implements IProduitService{
+public class ProduitService implements IProduitService {
 
     @Autowired
     private IProduitRepository produitRepository;
 
-     @Override
+    @Override
     public Produit addProduit(Produit produit) {
-         produitRepository.save(produit);
-         return produit;
-     }
+        return produitRepository.save(produit);
+    }
 
     @Override
-    public List<ProduitDto> findTop10ByNomProduitStartingWithIgnoreCase(String prefixe) {
-        List<Produit> produits = produitRepository.findByNomProduitStartingWithIgnoreCase(prefixe);
-        return produits.stream()
-                .map(DtoConverter::convert)
-                .collect(Collectors.toList());
+    public List<ProduitDto> searchByPrefixeAndMagasinOrdered(String prefixe, Long magasinId) {
+        if (prefixe == null || prefixe.trim().isEmpty()) {
+            throw new IllegalArgumentException("prefixe ne doit pas être vide");
+        }
+        if (magasinId == null) {
+            throw new IllegalArgumentException("magasinId ne doit pas être null");
+        }
+
+        return produitRepository.searchProduits(prefixe.trim(), magasinId, PageRequest.of(0, 10));
     }
 }

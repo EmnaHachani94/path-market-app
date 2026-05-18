@@ -9,6 +9,8 @@ import {
   TextInput,
   View,
 } from "react-native";
+
+import ProduitItem from "../src/components/ProduitItem";
 import {
   addLigneToListe,
   createListe,
@@ -29,7 +31,7 @@ type ListeDeCoursesDetailResponseDto = {
     rayonId: number;
     nomRayon: string;
     ordreVisite: number;
-    Lignes: {
+    lignes: {
       idLigne: number;
       produitId: number;
       nomProduit: string;
@@ -284,14 +286,16 @@ export default function Home() {
                     >
                       {idx + 1}. {rayon.nomRayon}
                     </Text>
-                    {Array.isArray(rayon.Lignes) && rayon.Lignes.length > 0 ? (
-                      rayon.Lignes.map((ligne) => (
-                        <Text
+                    {Array.isArray(rayon.lignes) && rayon.lignes.length > 0 ? (
+                      rayon.lignes.map((ligne) => (
+                        <ProduitItem
                           key={ligne.idLigne}
-                          style={{ marginLeft: 16, fontSize: 15 }}
-                        >
-                          - {ligne.nomProduit} x{ligne.quantite}
-                        </Text>
+                          ligne={ligne}
+                          onIncrement={() => {}}
+                          onDecrement={() => {}}
+                          onToggleAchete={() => {}}
+                          onDelete={() => {}}
+                        />
                       ))
                     ) : (
                       <Text

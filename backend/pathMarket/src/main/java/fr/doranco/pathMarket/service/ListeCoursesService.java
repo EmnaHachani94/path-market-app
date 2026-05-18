@@ -139,4 +139,13 @@ public class ListeCoursesService {
                 groupes
         );
     }
+
+    public void updateLigneQuantite(Long ligneId, Integer nouvelleQuantite) {
+    }
+
+    public void deleteLigne(Long ligneId) {
+    }
+
+    public void updateLigneStatut(Long ligneId, Boolean nouveauStatut) {
+    }
 }
