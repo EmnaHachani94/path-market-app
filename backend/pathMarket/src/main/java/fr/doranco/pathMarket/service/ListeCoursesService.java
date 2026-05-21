@@ -140,12 +140,24 @@ public class ListeCoursesService {
         );
     }
 
+    @Transactional
     public void updateLigneQuantite(Long ligneId, Integer nouvelleQuantite) {
+        // 1. Charger la ligne
+        LigneListe ligne = ligneListeRepository.findById(ligneId)
+                .orElseThrow(() -> new RuntimeException("Ligne non trouvée"));
+        // 2. Modifier la quantité
+        ligne.setQuantite(nouvelleQuantite);
+        // 3. Sauvegarder en base
+        ligneListeRepository.save(ligne);
     }
 
     public void deleteLigne(Long ligneId) {
+        ligneListeRepository.deleteById(ligneId);
     }
 
     public void updateLigneStatut(Long ligneId, Boolean nouveauStatut) {
+        LigneListe ligne = ligneListeRepository.findById(ligneId).orElseThrow(() -> new RuntimeException("Ligne non trouvée"));
+        ligne.setStatut(nouveauStatut);
+        ligneListeRepository.save(ligne);
     }
 }

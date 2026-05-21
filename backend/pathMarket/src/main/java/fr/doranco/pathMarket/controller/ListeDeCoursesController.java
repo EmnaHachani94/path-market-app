@@ -51,14 +51,15 @@ public class ListeDeCoursesController {
     }
 
     @GetMapping(value = "/{listeId}", produces = "application/json")
-    public ResponseEntity<ListeDeCoursesDetailResponseDto> getListeDetail(@PathVariable Long listeId) {
+    public ResponseEntity<ListeDeCoursesDetailResponseDto> getListeDetail(@PathVariable Long listeId) { // @PathVariable : récupere la valeur présente dans l'URL
 
         ListeDeCoursesDetailResponseDto dto = listeCoursesService.getListeDetailGroupByRayon(listeId);
 
         return ResponseEntity.ok(dto);
     }
+
     @PutMapping(value = "/lignes/{ligneId}/quantite", consumes = "application/json")
-    public ResponseEntity<Void> updateQuantite(
+    public ResponseEntity<Void> updateQuantite( //Void : aucun contenu dans la réponse , on retourne seulement un statut HTTP
             @PathVariable Long ligneId,
             @RequestBody Map<String, Integer> payload
     ) {
