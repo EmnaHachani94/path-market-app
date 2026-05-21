@@ -1,5 +1,5 @@
+import { API_BASE_URL } from "../config/Api";
 import { apiGet, apiPost } from "./apiClient";
-
 /**
  * Backend:
  *  - POST /api/rest/Listes
@@ -44,4 +44,42 @@ export async function addLigneToListe({ listeId, produitId, quantite }) {
 export async function fetchListeDetail(listeId) {
   if (listeId == null) throw new Error("listeId est obligatoire");
   return apiGet(`/api/rest/Listes/${listeId}`);
+}
+export async function updateLigneQuantite({ ligneId, nouvelleQuantite }) {
+  const res = await fetch(
+    `${API_BASE_URL}/api/rest/Listes/lignes/${ligneId}/quantite`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ quantite: nouvelleQuantite }),
+    },
+  );
+  if (res.ok) {
+    return true;
+  }
+  // Si erreur...
+  const text = await res.text();
+  throw new Error(text);
+}
+
+export async function supprimerLigne(ligneId) {
+  const res = await fetch(`${API_BASE_URL}/api/rest/Listes/lignes/${ligneId}`, {
+    method: "DELETE",
+  });
+  if (res.status === 204 || res.status === 200) return true;
+  const text = await res.text();
+  throw new Error(text);
+}
+export async function updateLigneStatut({ ligneId, statut }) {
+  const res = await fetch(
+    `${API_BASE_URL}/api/rest/Listes/lignes/${ligneId}/statut`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ statut }),
+    },
+  );
+  if (res.status === 204 || res.status === 200) return true;
+  const text = await res.text();
+  throw new Error(text);
 }

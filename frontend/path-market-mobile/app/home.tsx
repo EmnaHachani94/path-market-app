@@ -15,6 +15,9 @@ import {
   addLigneToListe,
   createListe,
   fetchListeDetail,
+  supprimerLigne,
+  updateLigneQuantite,
+  updateLigneStatut,
 } from "../src/services/listeApi";
 import { fetchMagasins } from "../src/services/magasinApi";
 import { searchProduits } from "../src/services/produitApi";
@@ -64,6 +67,49 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loadingResults, setLoadingResults] = useState(false);
+  const handleIncrementQte = async (rayonId: number, idLigne: number) => {
+    if (!listeDetail || !listeId) return;
+    const rayon = listeDetail.rayons.find((r) => r.rayonId === rayonId);
+    if (!rayon) return;
+    const ligne = rayon.lignes.find((l) => l.idLigne === idLigne);
+    if (!ligne) return;
+    const nouvelleQuantite = ligne.quantite + 1;
+    await updateLigneQuantite({ ligneId: idLigne, nouvelleQuantite });
+    const maj = await fetchListeDetail(listeId);
+    console.log("NOUVELLES DONNEES API --->", maj);
+    setListeDetail(maj);
+  };
+
+  const handleDecrementQte = async (rayonId: number, idLigne: number) => {
+    if (!listeDetail || !listeId) return;
+    const rayon = listeDetail.rayons.find((r) => r.rayonId === rayonId);
+    if (!rayon) return;
+    const ligne = rayon.lignes.find((l) => l.idLigne === idLigne);
+    if (!ligne || ligne.quantite <= 1) return;
+    const nouvelleQuantite = ligne.quantite - 1;
+    await updateLigneQuantite({ ligneId: idLigne, nouvelleQuantite });
+    const maj = await fetchListeDetail(listeId);
+    console.log("NOUVELLES DONNEES API --->", maj);
+    setListeDetail(maj);
+  };
+  const handleSupprimerLigne = async (rayonId: number, idLigne: number) => {
+    if (!listeDetail || !listeId) return;
+    await supprimerLigne(idLigne);
+    const maj = await fetchListeDetail(listeId);
+    setListeDetail(maj);
+  };
+
+  const handleToggleAchete = async (rayonId: number, idLigne: number) => {
+    if (!listeDetail || !listeId) return;
+    const rayon = listeDetail.rayons.find((r) => r.rayonId === rayonId);
+    if (!rayon) return;
+    const ligne = rayon.lignes.find((l) => l.idLigne === idLigne);
+    if (!ligne) return;
+    // Inverse statut
+    await updateLigneStatut({ ligneId: idLigne, statut: !ligne.statut });
+    const maj = await fetchListeDetail(listeId);
+    setListeDetail(maj);
+  };
 
   // --- Chargement magasins ---
   useEffect(() => {
@@ -256,7 +302,7 @@ export default function Home() {
         </View>
       )}
 
-      {/* --- Affichage FINAL de la liste groupée, triée par rayon et ordonnée (ordre de visite magasin) --- */}
+      {/* --- AFFICHAGE FINAL LISTE COURSES / GROUPEE PAR RAYON --- */}
       {listeDetail && (
         <View style={[styles.card, { width: "94%" }]}>
           <Text style={styles.sectionTitle}>
@@ -291,10 +337,18 @@ export default function Home() {
                         <ProduitItem
                           key={ligne.idLigne}
                           ligne={ligne}
-                          onIncrement={() => {}}
-                          onDecrement={() => {}}
-                          onToggleAchete={() => {}}
-                          onDelete={() => {}}
+                          onIncrement={() =>
+                            handleIncrementQte(rayon.rayonId, ligne.idLigne)
+                          }
+                          onDecrement={() =>
+                            handleDecrementQte(rayon.rayonId, ligne.idLigne)
+                          }
+                          onToggleAchete={() =>
+                            handleToggleAchete(rayon.rayonId, ligne.idLigne)
+                          }
+                          onDelete={() =>
+                            handleSupprimerLigne(rayon.rayonId, ligne.idLigne)
+                          }
                         />
                       ))
                     ) : (
@@ -319,7 +373,6 @@ export default function Home() {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   card: {
     margin: 16,
