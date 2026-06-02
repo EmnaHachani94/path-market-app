@@ -24,16 +24,13 @@ const FOOTER_HEIGHT = 64;
 
 const styles = StyleSheet.create({
   wrapper: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  bar: {
     height: FOOTER_HEIGHT,
     borderTopWidth: 1,
     borderTopColor: "rgba(33,65,60,0.12)",
     backgroundColor: "rgba(255,255,255,0.92)",
+  },
+  bar: {
+    height: FOOTER_HEIGHT,
     alignItems: "center",
     justifyContent: "center",
   },
