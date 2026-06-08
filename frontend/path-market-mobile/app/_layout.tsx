@@ -1,4 +1,4 @@
-import { useColorScheme } from "@/src/hooks/use-color-scheme";
+/*import { useColorScheme } from "@/src/hooks/use-color-scheme";
 import {
   DarkTheme,
   DefaultTheme,
@@ -15,6 +15,29 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }} />
       <StatusBar style="auto" />
+    </ThemeProvider>
+  );
+}*/
+import { useColorScheme } from "@/src/hooks/use-color-scheme";
+import RGPDConsentWrapper from "@/src/hooks/useRGPDConsent";
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "@react-navigation/native";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import "react-native-reanimated";
+
+export default function RootLayout() {
+  const colorScheme = useColorScheme();
+
+  return (
+    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <RGPDConsentWrapper>
+        <Stack screenOptions={{ headerShown: false }} />
+        <StatusBar style="auto" />
+      </RGPDConsentWrapper>
     </ThemeProvider>
   );
 }
